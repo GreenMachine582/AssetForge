@@ -1,0 +1,15 @@
+services:
+  assetforge:
+    build: .
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    volumes:
+      - ${DATA_PATH:-./data}:/app/data
+    environment:
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-8000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Always /app/data in-container — the mount target above, regardless
+      # of what DATA_PATH is set to on the host in .env.
+      - DATA_PATH=/app/data
+    restart: unless-stopped
