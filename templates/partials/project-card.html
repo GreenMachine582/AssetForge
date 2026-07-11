@@ -43,12 +43,28 @@
         </script>
         {% endif %}
 
-        <button class="btn btn-sm btn-outline-secondary"
-                hx-get="/partials/project-card/{{ project.type | urlenc }}/{{ project.key | urlenc }}?expanded={{ 'false' if expanded else 'true' }}"
-                hx-target="#project-card-{{ project.type | slug }}-{{ project.key | slug }}"
-                hx-swap="outerHTML">
-            {{ "Collapse" if expanded else "Expand" }}
-        </button>
+        <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-secondary"
+                    hx-get="/partials/project-card/{{ project.type | urlenc }}/{{ project.key | urlenc }}?expanded={{ 'false' if expanded else 'true' }}"
+                    hx-target="#project-card-{{ project.type | slug }}-{{ project.key | slug }}"
+                    hx-swap="outerHTML">
+                {{ "Collapse" if expanded else "Expand" }}
+            </button>
+            <button class="btn btn-sm btn-outline-secondary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#project-modal"
+                    hx-get="/partials/projects/form/{{ project.type | urlenc }}/{{ project.key | urlenc }}"
+                    hx-target="#project-modal-body"
+                    hx-swap="innerHTML">
+                Edit
+            </button>
+            <button class="btn btn-sm btn-outline-danger ms-auto"
+                    hx-delete="/partials/projects/{{ project.type | urlenc }}/{{ project.key | urlenc }}"
+                    hx-confirm="Delete {{ project.name }}? Assets will be disassociated but kept."
+                    hx-swap="none">
+                Delete
+            </button>
+        </div>
 
         {% if expanded %}
         <ul class="list-group list-group-flush mt-2">

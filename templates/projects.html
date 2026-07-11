@@ -3,9 +3,24 @@
 {% block title %}Projects — AssetForge{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4">Projects</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Projects</h1>
+    <button class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#project-modal"
+            hx-get="/partials/projects/form"
+            hx-target="#project-modal-body"
+            hx-swap="innerHTML">
+        + New Project
+    </button>
+</div>
 
-<div class="row g-3">
+<div id="projects-grid" class="row g-3">
+    {% if not cards %}
+    <div class="col-12">
+        <p class="text-body-secondary">No projects yet. Create one to get started.</p>
+    </div>
+    {% endif %}
     {% for card in cards %}
     <div class="col-md-6 col-lg-4">
         {% with project=card.project, bought_for_total=card.bought_for_total, used_by_total=card.used_by_total,
@@ -15,5 +30,18 @@
         {% endwith %}
     </div>
     {% endfor %}
+</div>
+
+<div id="project-modal" class="modal fade" tabindex="-1" aria-labelledby="project-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="project-modal-label">Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="project-modal-body">
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

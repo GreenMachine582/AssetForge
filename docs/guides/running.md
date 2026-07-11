@@ -50,24 +50,39 @@ docker run -d \
 
 Or with `docker-compose.yml` (already wired to `.env`):
 
-```yaml
-services:
-  assetforge:
-    build: .
-    env_file:
-      - .env
-    ports:
-      - "${PORT:-8000}:${PORT:-8000}"
-    volumes:
-      - ${DATA_PATH:-./data}:/app/data
-    environment:
-      - DATA_PATH=/app/data
-    restart: unless-stopped
-```
-
 ```bash
 docker compose up -d
 ```
+
+---
+
+## Applying Code Changes
+
+**Bare uvicorn (with `--reload`):** The process watches for file changes and
+restarts automatically — no manual step needed.
+
+**Docker:** Source code is baked into the image at build time. After editing any
+source file, rebuild and restart:
+
+```bash
+docker compose up -d --build
+```
+
+For a faster inner loop without a full rebuild, mount the source directory and
+enable reload:
+
+```bash
+docker run -d \
+  --name assetforge-dev \
+  --env-file .env \
+  -p 8000:8000 \
+  -v "$(pwd)":/app \
+  -v /path/to/your/data:/app/data \
+  assetforge \
+  uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+`data/` must be mounted separately so it isn't shadowed by the source volume.
 
 ---
 
@@ -77,12 +92,6 @@ The simplest backup is a directory copy:
 
 ```bash
 cp -r data/ backups/assetforge_$(date +%Y%m%d)/
-```
-
-Or rsync to your NAS:
-
-```bash
-rsync -av data/ homelab-nas:/backups/assetforge/
 ```
 
 The tracker also auto-backs up `assetforge.db` to `data/backups/` before any

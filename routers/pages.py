@@ -8,7 +8,8 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, insert, or_, select, update
+from sqlalchemy import delete, func, insert, or_, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from database import get_db
@@ -328,6 +329,167 @@ async def _project_card_context(conn: AsyncConnection, project_type: str, projec
         "assets": project_assets_rows if expanded else [],
         "expanded": expanded,
     }
+
+
+_SUGGESTED_TYPES = ["PC Build", "HomeLab", "Laptop", "Server"]
+
+
+async def _project_types(conn: AsyncConnection) -> list[str]:
+    db_types = (
+        await conn.execute(select(projects.c.type).distinct().order_by(projects.c.type))
+    ).scalars().all()
+    seen: set[str] = set()
+    result: list[str] = []
+    for t in _SUGGESTED_TYPES + list(db_types):
+        if t not in seen:
+            seen.add(t)
+            result.append(t)
+    return result
+
+
+@router.get("/partials/projects/form")
+async def partial_project_form_new(request: Request, conn: AsyncConnection = Depends(get_db)):
+    return templates.TemplateResponse(
+        request,
+        "partials/project-form.html",
+        {
+            "form_action": "/partials/projects",
+            "is_edit": False,
+            "project": None,
+            "existing_types": await _project_types(conn),
+        },
+    )
+
+
+@router.get("/partials/projects/form/{project_type}/{project_key}")
+async def partial_project_form_edit(
+    project_type: str,
+    project_key: str,
+    request: Request,
+    conn: AsyncConnection = Depends(get_db),
+):
+    row = (
+        await conn.execute(
+            select(projects).where(
+                projects.c.type == project_type, projects.c.key == project_key
+            )
+        )
+    ).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return templates.TemplateResponse(
+        request,
+        "partials/project-form.html",
+        {
+            "form_action": f"/partials/projects/{quote(project_type, safe='')}/{quote(project_key, safe='')}",
+            "is_edit": True,
+            "project": row,
+            "existing_types": await _project_types(conn),
+        },
+    )
+
+
+@router.post("/partials/projects")
+async def partial_project_create(
+    request: Request,
+    type: str = Form(...),
+    key: str = Form(...),
+    name: str = Form(...),
+    date_started: str = Form(default=""),
+    budget: str = Form(default=""),
+    notes: str = Form(default=""),
+    is_active: str = Form(default=""),
+    conn: AsyncConnection = Depends(get_db),
+):
+    values = {
+        "type": type.strip(),
+        "key": key.strip(),
+        "name": name.strip(),
+        "date_started": date.fromisoformat(date_started) if date_started else None,
+        "budget": float(budget) if budget else None,
+        "notes": notes.strip() or None,
+        "is_active": is_active == "on",
+    }
+    try:
+        await conn.execute(insert(projects).values(**values))
+        await conn.commit()
+    except IntegrityError:
+        await conn.rollback()
+        return HTMLResponse(
+            '<div class="alert alert-danger py-2 mb-0">A project with that type + key already exists.</div>'
+        )
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/projects"
+    return response
+
+
+@router.post("/partials/projects/{project_type}/{project_key}")
+async def partial_project_update(
+    project_type: str,
+    project_key: str,
+    request: Request,
+    name: str = Form(...),
+    date_started: str = Form(default=""),
+    budget: str = Form(default=""),
+    notes: str = Form(default=""),
+    is_active: str = Form(default=""),
+    conn: AsyncConnection = Depends(get_db),
+):
+    values = {
+        "name": name.strip(),
+        "date_started": date.fromisoformat(date_started) if date_started else None,
+        "budget": float(budget) if budget else None,
+        "notes": notes.strip() or None,
+        "is_active": is_active == "on",
+    }
+    result = await conn.execute(
+        update(projects)
+        .where(projects.c.type == project_type, projects.c.key == project_key)
+        .values(**values)
+    )
+    if result.rowcount == 0:
+        return HTMLResponse('<div class="alert alert-danger py-2 mb-0">Project not found.</div>')
+    await conn.commit()
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/projects"
+    return response
+
+
+@router.delete("/partials/projects/{project_type}/{project_key}")
+async def partial_project_delete(
+    project_type: str,
+    project_key: str,
+    conn: AsyncConnection = Depends(get_db),
+):
+    await conn.execute(
+        update(assets)
+        .where(assets.c.bought_for_type == project_type, assets.c.bought_for_key == project_key)
+        .values(bought_for_type=None, bought_for_key=None)
+    )
+    await conn.execute(
+        update(assets)
+        .where(assets.c.used_by_type == project_type, assets.c.used_by_key == project_key)
+        .values(used_by_type=None, used_by_key=None)
+    )
+    await conn.execute(
+        update(events)
+        .where(events.c.from_project_type == project_type, events.c.from_project_key == project_key)
+        .values(from_project_type=None, from_project_key=None)
+    )
+    await conn.execute(
+        update(events)
+        .where(events.c.to_project_type == project_type, events.c.to_project_key == project_key)
+        .values(to_project_type=None, to_project_key=None)
+    )
+    await conn.execute(
+        delete(projects).where(
+            projects.c.type == project_type, projects.c.key == project_key
+        )
+    )
+    await conn.commit()
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/projects"
+    return response
 
 
 @router.get("/projects")

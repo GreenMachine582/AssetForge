@@ -1,0 +1,72 @@
+<form hx-post="{{ form_action }}"
+      hx-target="#project-form-errors"
+      hx-swap="innerHTML">
+
+    <div id="project-form-errors" class="mb-2"></div>
+
+    {% if is_edit %}
+    <p class="text-body-secondary small mb-3">
+        <strong>{{ project.type }}</strong> &middot; <code>{{ project.key }}</code>
+        &ensp;<span>— type and key cannot be changed.</span>
+    </p>
+    {% else %}
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="pf-type">Type</label>
+            <input type="text" id="pf-type" name="type" class="form-control"
+                   list="pf-type-list" placeholder="PC Build" autocomplete="off" required>
+            <datalist id="pf-type-list">
+                {% for t in existing_types %}
+                <option value="{{ t }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="col">
+            <label class="form-label" for="pf-key">Key</label>
+            <input type="text" id="pf-key" name="key" class="form-control"
+                   placeholder="2-V2" required>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label class="form-label" for="pf-name">Name</label>
+        <input type="text" id="pf-name" name="name" class="form-control"
+               value="{{ project.name if project else '' }}"
+               placeholder="PC Build 2 — V2 Upgrade" required>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="pf-date">Date Started</label>
+            <input type="date" id="pf-date" name="date_started" class="form-control"
+                   value="{{ project.date_started.isoformat() if project and project.date_started else '' }}">
+        </div>
+        <div class="col">
+            <label class="form-label" for="pf-budget">Budget (AUD)</label>
+            <input type="number" id="pf-budget" name="budget" class="form-control"
+                   step="0.01" min="0"
+                   value="{{ project.budget if project and project.budget else '' }}"
+                   placeholder="2000.00">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="pf-notes">Notes</label>
+        <textarea id="pf-notes" name="notes" class="form-control" rows="3"
+                  placeholder="Optional notes...">{{ project.notes if project and project.notes else '' }}</textarea>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" id="pf-active" name="is_active" class="form-check-input"
+               {{ 'checked' if (not project or project.is_active) else '' }}>
+        <label class="form-check-label" for="pf-active">Active</label>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            {{ 'Save Changes' if is_edit else 'Create Project' }}
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    </div>
+</form>
