@@ -1,20 +1,110 @@
-"""/api/assets — CRUD + state transitions."""
+"""/api/assets — CRUD, filtering, and state transitions."""
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import insert, select, update
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from database import get_db
-from models import assets, events
+from models import assets, events, specs
 from schemas import AssetCreate, AssetOut, AssetUpdate, TransitionRequest
 from services.state_machine import validate_transition
 
 router = APIRouter()
 
 
+def _parse_type_key(value: str) -> tuple[str, str]:
+    project_type, _, project_key = value.partition(":")
+    return project_type, project_key
+
+
 @router.get("", response_model=list[AssetOut])
-async def list_assets(conn: AsyncConnection = Depends(get_db)):
-    rows = (await conn.execute(select(assets))).mappings().all()
+async def list_assets(
+    q: str | None = None,
+    project: list[str] = Query(default=[]),
+    category: list[str] = Query(default=[]),
+    state: list[str] = Query(default=[]),
+    used_by: str | None = None,
+    location_id: list[int] = Query(default=[]),
+    from_date: date | None = None,
+    to_date: date | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    is_consumable: bool | None = None,
+    warranty_expiring: int | None = None,
+    conn: AsyncConnection = Depends(get_db),
+):
+    query = select(assets).select_from(
+        assets.outerjoin(specs, assets.c.part_uid == specs.c.part_uid)
+    )
+
+    conditions = []
+
+    if q:
+        like = f"%{q}%"
+        conditions.append(
+            or_(
+                assets.c.name.ilike(like),
+                assets.c.notes.ilike(like),
+                specs.c.compat_notes.ilike(like),
+            )
+        )
+
+    if project:
+        project_conditions = []
+        for token in project:
+            project_type, project_key = _parse_type_key(token)
+            project_conditions.append(
+                or_(
+                    and_(
+                        assets.c.bought_for_type == project_type,
+                        assets.c.bought_for_key == project_key,
+                    ),
+                    and_(
+                        assets.c.used_by_type == project_type,
+                        assets.c.used_by_key == project_key,
+                    ),
+                )
+            )
+        conditions.append(or_(*project_conditions))
+
+    if category:
+        conditions.append(assets.c.category.in_(category))
+
+    if state:
+        conditions.append(assets.c.state.in_(state))
+
+    if used_by:
+        used_by_type, used_by_key = _parse_type_key(used_by)
+        conditions.append(assets.c.used_by_type == used_by_type)
+        conditions.append(assets.c.used_by_key == used_by_key)
+
+    if location_id:
+        conditions.append(assets.c.location_id.in_(location_id))
+
+    if from_date:
+        conditions.append(assets.c.purchase_date >= from_date)
+    if to_date:
+        conditions.append(assets.c.purchase_date <= to_date)
+
+    if min_amount is not None:
+        conditions.append(assets.c.amount >= min_amount)
+    if max_amount is not None:
+        conditions.append(assets.c.amount <= max_amount)
+
+    if is_consumable is not None:
+        conditions.append(assets.c.is_consumable == is_consumable)
+
+    if warranty_expiring is not None:
+        cutoff = date.today() + timedelta(days=warranty_expiring)
+        conditions.append(assets.c.warranty_expiry.isnot(None))
+        conditions.append(assets.c.warranty_expiry <= cutoff)
+
+    if conditions:
+        query = query.where(and_(*conditions))
+
+    rows = (await conn.execute(query)).mappings().all()
     return list(rows)
 
 

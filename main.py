@@ -17,6 +17,7 @@ from routers import (
     pages,
     projects,
     reports,
+    settings,
     specs,
 )
 
@@ -43,3 +44,4 @@ app.include_router(attachments.router, prefix="/api/attachments", tags=["attachm
 app.include_router(benchmarks.router, prefix="/api/benchmarks", tags=["benchmarks"])
 app.include_router(reports.router, prefix="/api", tags=["reports"])
 app.include_router(io.router, prefix="/api", tags=["import/export"])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
