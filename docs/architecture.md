@@ -41,9 +41,9 @@ These are the answers to the open design questions, decided once, not revisited.
 
 ### 1. Source of truth
 
-SQLite is the authoritative datastore. Excel and JSON are import/export
-compatibility layers. The seed script populates SQLite from the existing
-workbook once. The workbook is generated on demand from SQLite — never edited
+SQLite is the authoritative datastore. Excel is an export format for
+shareability; JSON is a backup/restore format. Data is entered through the
+web UI. The workbook is generated on demand from SQLite — never edited
 directly.
 
 ### 2. What is a Project?
@@ -103,7 +103,6 @@ AssetForge/
 ├── database.py                 SQLite engine, session factory
 ├── models.py                   SQLAlchemy table definitions (full schema)
 ├── schemas.py                  Pydantic request/response models
-├── seed.py                     One-shot import from existing Excel
 │
 ├── routers/
 │   ├── pages.py                GET /* Jinja2 page routes

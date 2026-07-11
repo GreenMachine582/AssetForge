@@ -175,7 +175,6 @@ See [ai-context.md](ai-context.md) for profile details.
 | Excel export (5-sheet workbook) | M1 |
 | JSON export (full structured dump) | M1 |
 | Specs markdown export | M1 |
-| Excel import (seed or replace) | M1 |
 | JSON import (full restore) | M1 |
 | Auto-backup before any import | M1 |
 | SQLite snapshot download | V1 |

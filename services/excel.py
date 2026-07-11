@@ -1,9 +1,8 @@
-"""openpyxl workbook builder / reader — 5-sheet tracker format.
+"""openpyxl workbook builder — export-only, 5-sheet tracker format.
 
-Excel is an import/export compatibility layer only; SQLite is authoritative
-(see docs/architecture.md #1). This is a fresh 5-sheet layout derived from
-our own schema (Projects, Assets, Specs, Events, Settings) — there is no
-legacy PC_Build_Tracker.xlsx in this repo to mirror instead.
+Excel is an export format for shareability only; SQLite is authoritative
+(see docs/architecture.md #1). Data is entered through the web UI.
+Sheets: Projects, Assets, Specs, Events, Settings.
 """
 
 import json
@@ -46,5 +45,3 @@ async def build_workbook(conn: AsyncConnection) -> Workbook:
     return workbook
 
 
-def read_workbook(path: Path):
-    raise NotImplementedError("Excel import — implemented as an M1 follow-up")

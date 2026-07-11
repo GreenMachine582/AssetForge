@@ -6,9 +6,6 @@
 # Install dependencies
 pip install -r requirements.txt
 
-# Seed from existing Excel tracker (one-time)
-python seed.py --file PC_Build_Tracker.xlsx --db data/assetforge.db
-
 # Run with auto-reload
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -74,24 +71,6 @@ docker compose up -d
 
 ---
 
-## Seeding
-
-```bash
-# From existing Excel workbook
-python seed.py --file PC_Build_Tracker.xlsx
-
-# Specify a different DB path
-python seed.py --file PC_Build_Tracker.xlsx --db /path/to/assetforge.db
-
-# Dry run (print what would be imported, don't write)
-python seed.py --file PC_Build_Tracker.xlsx --dry-run
-```
-
-Seed is idempotent — running it twice won't duplicate rows. It upserts on
-`part_uid`.
-
----
-
 ## Backup
 
 The simplest backup is a directory copy:
@@ -120,13 +99,9 @@ A scheduled backup via APScheduler is added in V1.
 curl -X POST http://localhost:8000/api/import/json \
      -F "file=@assetforge_backup.json"
 
-# From Excel export
-curl -X POST http://localhost:8000/api/import/excel \
-     -F "file=@PC_Build_Tracker.xlsx"
-
 # From SQLite snapshot (V1)
 # Stop the server, replace data/assetforge.db, restart
 cp assetforge_backup.db data/assetforge.db
 ```
 
-All import endpoints auto-backup the existing DB before replacing.
+The JSON import endpoint auto-backs up the existing DB before replacing.

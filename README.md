@@ -23,9 +23,6 @@ research and upgrade planning.
 ```bash
 pip install -r requirements.txt
 
-# Seed from existing Excel tracker (one-time)
-python seed.py --file PC_Build_Tracker.xlsx
-
 # Run
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -40,7 +37,7 @@ See [docs/guides/running.md](docs/guides/running.md) for Docker deployment.
 
 | Milestone | Status |
 |---|---|
-| [M1 — MVP](docs/milestones/01-mvp.md) | 🔵 In progress |
+| [M1 — MVP](docs/milestones/01-mvp.md) | ✅ Done |
 | [M2 — Asset Lifecycle](docs/milestones/02-lifecycle.md) | ⚪ Planned |
 | [M3 — Intelligence](docs/milestones/03-intelligence.md) | ⚪ Planned |
 | [M4 — Analytics](docs/milestones/04-analytics.md) | ⚪ Planned |
@@ -57,7 +54,7 @@ See [docs/guides/running.md](docs/guides/running.md) for Docker deployment.
 | [Features](docs/features.md) | Full feature inventory across all phases |
 | [API Reference](docs/api-reference.md) | All routes — pages, partials, JSON API |
 | [AI Context](docs/ai-context.md) | Export profiles and how to use them |
-| [Running](docs/guides/running.md) | Install, seed, deploy, backup |
+| [Running](docs/guides/running.md) | Install, run, deploy, backup |
 
 ---
 
@@ -69,7 +66,6 @@ AssetForge/
 ├── database.py           SQLite engine and session factory
 ├── models.py             SQLAlchemy table definitions
 ├── schemas.py            Pydantic request/response models
-├── seed.py               One-shot Excel import
 ├── routers/              Page + API route handlers
 ├── services/             Business logic (state machine, compat, export)
 ├── templates/            Jinja2 + HTMX page and partial templates

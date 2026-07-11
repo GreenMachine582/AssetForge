@@ -216,7 +216,6 @@ GET    /api/export/excel                Download .xlsx          [M1]
 GET    /api/export/json                 Download .json          [M1]
 GET    /api/export/specs-md             Download/copy .md       [M1]
 GET    /api/export/sqlite               Download .db snapshot   [V1]
-POST   /api/import/excel                Upload .xlsx            [M1]
 POST   /api/import/json                 Upload .json            [M1]
 ```
 

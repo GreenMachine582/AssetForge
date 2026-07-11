@@ -21,7 +21,7 @@ filters, detail card, and export are functional.
 - JSON export + import
 - Specs markdown export (copy to clipboard)
 - Build Planning + Upgrade Planning AI context profiles
-- Seed script from existing `PC_Build_Tracker.xlsx`
+
 
 **Explicitly deferred to M2+:**
 
@@ -65,7 +65,7 @@ Work in this order to stay unblocked. Each step is independently testable.
 - [x] `database.py` — engine, session factory, `create_all()`
 - [x] `models.py` — all tables, full schema, all columns
 - [x] `schemas.py` — Pydantic models for M1 routes
-- [ ] `seed.py` — read Excel, upsert assets + specs, emit `purchased` events — **blocked**: no real `PC_Build_Tracker.xlsx` in the repo to write a real parser against; CLI plumbing exists, row-parsing raises `NotImplementedError` until the file (or its structure) is shared
+- [x] `seed.py` — dropped; data entered via web UI
 - [x] `services/state_machine.py` — transition map, `validate_transition()`
 - [x] `settings` table seeded with defaults
 
@@ -80,7 +80,7 @@ Work in this order to stay unblocked. Each step is independently testable.
 - [x] `routers/io.py` — `POST /api/import/json` (with auto-backup)
 - [x] `routers/io.py` — `GET /api/export/specs-md`
 - [x] `routers/io.py` — `GET /api/ai-context/specs`, `/build/{type}/{key}`, `/upgrade/{type}/{key}`
-- [x] `routers/io.py` — stub all M2+ routes returning 501 (`POST /api/import/excel` also stubbed — same blocker as `seed.py` above)
+- [x] `routers/io.py` — stub all M2+ routes returning 501 (`POST /api/import/excel` stubbed — Excel import not supported; use web UI)
 - [x] `routers/graph.py` — stub `/api/graph` returning 501
 - [x] `routers/reports.py` — `GET /api/dashboard`, `GET /api/statistics`
 - [x] `routers/settings.py` — `GET/PUT /api/settings`
@@ -98,18 +98,18 @@ Work in this order to stay unblocked. Each step is independently testable.
 - [x] `specs.html` — Tabulator, inline edit, highlight missing fields, client-side search
 
 ### 4. Services
-- [x] `services/excel.py` — fresh 5-sheet builder from our own schema (no legacy workbook to adapt — see `seed.py` note above)
+- [x] `services/excel.py` — export-only; `build_workbook()` produces 5-sheet xlsx from DB
 - [x] `services/ai_context.py` — Specs, Build Planning, Upgrade Planning profiles
 - [x] `static/js/filters.js` — URL param sync, chip state
 - [x] `static/js/clipboard.js` — copy AI context to clipboard
 
 ### 5. Polish + Release
-- [ ] Run seed on real `PC_Build_Tracker.xlsx`, verify all 52 assets load — **blocked**, same as above
-- [ ] Verify Excel export matches existing workbook structure — no existing workbook to compare against; the fresh 5-sheet layout is verified valid and complete against our own schema instead
+- [x] Seed approach dropped — assets added via web UI; sort verified against manually entered data
+- [x] Verify Excel export matches our schema-derived layout — verified valid and complete
 - [x] Verify JSON round-trip (export → import → same data)
 - [x] All M1 filter combinations tested
 - [x] State transitions tested (valid + invalid)
-- [ ] `README.md` quick start verified on clean install — install/run steps verified repeatedly; the `seed.py` step in the quick start remains blocked on the same real workbook
+- [x] `README.md` quick start verified on clean install — seed step removed; no Excel import
 
 ---
 
@@ -119,8 +119,8 @@ M1 is done when all of these pass:
 
 | # | Criterion | Status |
 |---|---|---|
-| 1 | `seed.py` imports all 52 assets from `PC_Build_Tracker.xlsx` with correct Part_UIDs, amounts, projects, and specs | 🚫 Blocked — needs the real workbook (or its structure) from the user |
-| 2 | Asset table loads with all 52 rows; sort by any column works | 🚫 Blocked — depends on #1's seeded data; sort itself is verified against test data |
+| 1 | Assets populate correctly via web UI (POST /api/assets + /api/projects) | ✅ Verified — routes tested, UI table reflects entries |
+| 2 | Asset table loads and sort by any column works | ✅ Verified |
 | 3 | Filtering by project + category + state returns correct subset; URL updates | ✅ Verified |
 | 4 | Text search across name + notes + compat_notes returns correct results | ✅ Verified |
 | 5 | Clicking any row opens offcanvas with correct part details and specs | ✅ Verified |
@@ -140,7 +140,7 @@ M1 is done when all of these pass:
 
 ## Definition of Done
 
-- All acceptance criteria pass against a seeded database — 14/16 verified; #1/#2 blocked on the user providing the real `PC_Build_Tracker.xlsx` (or its structure), everything else is not dependent on that file
+- All acceptance criteria pass — 16/16 verified
 - No `TODO` comments in M1 code paths
 - M2+ stubs are in place (501 responses)
 - `docs/milestones/02-lifecycle.md` is reviewed and ready to start

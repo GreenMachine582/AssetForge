@@ -21,7 +21,7 @@ from services.serialization import json_default as _json_default
 
 router = APIRouter()
 
-_NOT_IMPLEMENTED_IMPORT = "Excel import — implemented as an M1 follow-up"
+_NOT_IMPLEMENTED_IMPORT = "Excel import is not supported — use the web UI to add assets"
 
 # Table dump/restore order for JSON export/import. Insert order (top to
 # bottom) is FK-safe; delete order for import is the reverse.
