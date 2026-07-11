@@ -52,5 +52,5 @@ No new tables or columns. M2 activates columns that were nullable in M1:
 | 6 | Bulk reassign moves selected assets and appends events for each |
 | 7 | PDF/image upload stores file in `data/attachments/{part_uid}/` and records DB entry |
 | 8 | Attachment list shows in offcanvas card with download link |
-| 9 | HomeLab AI context profile includes all HL-* assets with power specs |
+| 9 | HomeLab AI context profile includes all assets in any `type="HomeLab"` project, with power specs |
 | 10 | Purchasing profile includes budget remaining and warranty expiry dates |

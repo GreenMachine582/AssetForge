@@ -63,6 +63,7 @@ def _parse_filters(request: Request) -> dict:
         "max_amount": _float("max_amount"),
         "is_consumable": _bool("is_consumable"),
         "warranty_expiring": int(qp["warranty_expiring"]) if qp.get("warranty_expiring") else None,
+        "reallocated": _bool("reallocated"),
     }
 
 
@@ -82,6 +83,12 @@ def _asset_rows_json(rows) -> str:
 @router.get("/")
 async def dashboard(request: Request, conn: AsyncConnection = Depends(get_db)):
     total_spend = (await conn.execute(select(func.sum(assets.c.amount)))).scalar() or 0
+
+    planned_spend = (
+        await conn.execute(
+            select(func.sum(assets.c.amount)).where(assets.c.state == "planned")
+        )
+    ).scalar() or 0
 
     state_counts_rows = (
         await conn.execute(select(assets.c.state, func.count()).group_by(assets.c.state))
@@ -109,6 +116,7 @@ async def dashboard(request: Request, conn: AsyncConnection = Depends(get_db)):
         "dashboard.html",
         {
             "total_spend": total_spend,
+            "planned_spend": planned_spend,
             "state_counts": state_counts,
             "recent_assets": recent,
             "spend_by_type_json": json.dumps(
@@ -119,6 +127,10 @@ async def dashboard(request: Request, conn: AsyncConnection = Depends(get_db)):
     )
 
 
+async def _all_projects(conn: AsyncConnection):
+    return (await conn.execute(select(projects))).mappings().all()
+
+
 @router.get("/assets")
 async def assets_page(request: Request, conn: AsyncConnection = Depends(get_db)):
     filters = _parse_filters(request)
@@ -126,14 +138,22 @@ async def assets_page(request: Request, conn: AsyncConnection = Depends(get_db))
     return templates.TemplateResponse(
         request,
         "assets.html",
-        {"filters": filters, "rows_json": _asset_rows_json(rows)},
+        {
+            "filters": filters,
+            "rows_json": _asset_rows_json(rows),
+            "all_projects": await _all_projects(conn),
+        },
     )
 
 
 @router.get("/partials/filter-bar")
-async def partial_filter_bar(request: Request):
+async def partial_filter_bar(request: Request, conn: AsyncConnection = Depends(get_db)):
     filters = _parse_filters(request)
-    return templates.TemplateResponse(request, "partials/filter-bar.html", {"filters": filters})
+    return templates.TemplateResponse(
+        request,
+        "partials/filter-bar.html",
+        {"filters": filters, "all_projects": await _all_projects(conn)},
+    )
 
 
 @router.get("/partials/assets-table")
@@ -304,6 +324,7 @@ async def _project_card_context(conn: AsyncConnection, project_type: str, projec
         "used_by_total": used_by_total,
         "item_count": len(project_assets_rows),
         "state_counts": state_counts,
+        "state_counts_json": json.dumps(state_counts),
         "assets": project_assets_rows if expanded else [],
         "expanded": expanded,
     }

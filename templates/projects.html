@@ -9,7 +9,8 @@
     {% for card in cards %}
     <div class="col-md-6 col-lg-4">
         {% with project=card.project, bought_for_total=card.bought_for_total, used_by_total=card.used_by_total,
-                item_count=card.item_count, state_counts=card.state_counts, assets=card.assets, expanded=card.expanded %}
+                item_count=card.item_count, state_counts=card.state_counts, state_counts_json=card.state_counts_json,
+                assets=card.assets, expanded=card.expanded %}
             {% include "partials/project-card.html" %}
         {% endwith %}
     </div>

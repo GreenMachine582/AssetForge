@@ -6,7 +6,7 @@
 <h1 class="h3 mb-4">Dashboard</h1>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle text-body-secondary mb-2">Total Spend</h6>
@@ -14,7 +14,15 @@
             </div>
         </div>
     </div>
-    <div class="col-md-8">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle text-body-secondary mb-2">Planned Spend</h6>
+                <p class="card-text fs-3">${{ "%.2f"|format(planned_spend) }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h6 class="card-subtitle text-body-secondary mb-2">Assets by State</h6>

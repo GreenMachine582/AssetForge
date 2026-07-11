@@ -50,8 +50,9 @@ directly.
 
 A Project is a **long-lived system** (`PC Build 2`, `HomeLab NAS`). Upgrades
 are not new projects — they are events on existing assets within a project.
-The current `PCB2-V1` / `PCB2-V2` naming in the seed data is preserved as
-version-tagged events rather than separate projects in the authoritative model.
+A version-suffixed name like "PC Build 2 V2" maps to a single project
+(`type="PC Build"`, `key="2"`) with the version change captured as events,
+not as a separate project or a suffix baked into the key itself.
 
 ### 3. Bundles and sub-components
 

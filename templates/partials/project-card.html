@@ -21,11 +21,26 @@
         {% endif %}
 
         {% if state_counts %}
-        <div class="mb-2">
-            {% for state, count in state_counts.items() %}
-            <span class="badge text-bg-secondary">{{ state }}: {{ count }}</span>
-            {% endfor %}
+        {% set chart_id = "state-chart-" ~ (project.type | slug) ~ "-" ~ (project.key | slug) %}
+        <div class="mb-2" style="max-width: 180px;">
+            <canvas id="{{ chart_id }}" height="140"></canvas>
         </div>
+        <script>
+        (function () {
+            const counts = {{ state_counts_json | safe }};
+            new Chart(document.getElementById("{{ chart_id }}"), {
+                type: "doughnut",
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ["#0d6efd", "#6610f2", "#d63384", "#fd7e14", "#198754", "#20c997", "#0dcaf0", "#6c757d"],
+                    }],
+                },
+                options: { plugins: { legend: { position: "right", labels: { boxWidth: 10 } } } },
+            });
+        })();
+        </script>
         {% endif %}
 
         <button class="btn btn-sm btn-outline-secondary"

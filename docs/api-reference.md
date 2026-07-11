@@ -65,7 +65,7 @@ GET    /api/assets/{uid}/benchmarks     Benchmark history       [M4]
 | Param | Type | Example |
 |---|---|---|
 | `q` | string | `q=samsung` |
-| `project` | string (multi, `type:key` pairs) | `project=PC Build:2-V2&project=HomeLab:NAS` |
+| `project` | string (multi, `type:key` pairs, or bare `type` for "any key of that type") | `project=PC Build:2-V2&project=HomeLab` |
 | `category` | string (multi) | `category=GPU&category=CPU` |
 | `state` | string (multi) | `state=in_service&state=planned` |
 | `used_by` | string (`type:key`) | `used_by=PC Build:2-V2` |
@@ -76,6 +76,7 @@ GET    /api/assets/{uid}/benchmarks     Benchmark history       [M4]
 | `max_amount` | float | `max_amount=1000` |
 | `is_consumable` | bool | `is_consumable=false` |
 | `warranty_expiring` | int (days) | `warranty_expiring=90` |
+| `reallocated` | bool | `reallocated=true` — assets with at least one `reallocated` event |
 
 ---
 

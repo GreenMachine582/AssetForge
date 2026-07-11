@@ -1,3 +1,13 @@
+<div class="d-flex justify-content-end mb-2">
+    <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside">
+            Columns
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end p-2" id="column-toggle-menu" style="min-width: 200px;"></ul>
+    </div>
+</div>
+
 <div id="assets-table"></div>
 
 <script>
@@ -27,6 +37,26 @@
         }).then(function () {
             const offcanvasEl = document.getElementById("asset-offcanvas");
             bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+        });
+    });
+
+    table.on("tableBuilt", function () {
+        const menu = document.getElementById("column-toggle-menu");
+        table.getColumns().forEach(function (column) {
+            const li = document.createElement("li");
+            const label = document.createElement("label");
+            label.className = "dropdown-item mb-0";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "form-check-input me-2";
+            checkbox.checked = true;
+            checkbox.addEventListener("change", function () {
+                column.toggle();
+            });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(column.getDefinition().title));
+            li.appendChild(label);
+            menu.appendChild(li);
         });
     });
 })();

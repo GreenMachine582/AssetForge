@@ -30,6 +30,27 @@
     </div>
 
     <div class="col">
+        <label class="form-label small mb-0">Project</label>
+        <select name="project" class="form-select form-select-sm" multiple size="4">
+            {% for p in all_projects %}
+            {% set token = p.type ~ ":" ~ p.key %}
+            <option value="{{ token }}" {% if token in filters.project %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col">
+        <label class="form-label small mb-0">Used By</label>
+        <select name="used_by" class="form-select form-select-sm">
+            <option value="">Any</option>
+            {% for p in all_projects %}
+            {% set token = p.type ~ ":" ~ p.key %}
+            <option value="{{ token }}" {% if filters.used_by == token %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col">
         <label class="form-label small mb-0">Purchased from</label>
         <input type="date" name="from_date" class="form-control form-control-sm" value="{{ filters.from_date or '' }}">
     </div>
@@ -56,6 +77,14 @@
             <button type="button" class="btn btn-outline-secondary"
                     hx-get="/partials/assets-table?state=in_service" hx-target="#assets-table-container" hx-push-url="true">
                 Active
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+                    hx-get="/partials/assets-table?project=HomeLab" hx-target="#assets-table-container" hx-push-url="true">
+                HomeLab
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+                    hx-get="/partials/assets-table?reallocated=true" hx-target="#assets-table-container" hx-push-url="true">
+                Reallocated
             </button>
         </div>
     </div>

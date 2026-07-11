@@ -14,9 +14,11 @@ from services.state_machine import validate_transition
 router = APIRouter()
 
 
-def _parse_type_key(value: str) -> tuple[str, str]:
-    project_type, _, project_key = value.partition(":")
-    return project_type, project_key
+def _parse_type_key(value: str) -> tuple[str, str | None]:
+    """Split a `type:key` filter token. A bare token with no `:` (e.g.
+    "HomeLab") means "any key of this type" — `key` comes back `None`."""
+    project_type, sep, project_key = value.partition(":")
+    return project_type, (project_key if sep else None)
 
 
 async def filtered_assets(
@@ -33,6 +35,7 @@ async def filtered_assets(
     max_amount: float | None = None,
     is_consumable: bool | None = None,
     warranty_expiring: int | None = None,
+    reallocated: bool | None = None,
 ):
     """Shared filter logic for GET /api/assets and GET /partials/assets-table."""
     query = select(assets).select_from(
@@ -55,18 +58,27 @@ async def filtered_assets(
         project_conditions = []
         for token in project:
             project_type, project_key = _parse_type_key(token)
-            project_conditions.append(
-                or_(
-                    and_(
+            if project_key is None:
+                # Bare type (e.g. "HomeLab") — any key of this type.
+                project_conditions.append(
+                    or_(
                         assets.c.bought_for_type == project_type,
-                        assets.c.bought_for_key == project_key,
-                    ),
-                    and_(
                         assets.c.used_by_type == project_type,
-                        assets.c.used_by_key == project_key,
-                    ),
+                    )
                 )
-            )
+            else:
+                project_conditions.append(
+                    or_(
+                        and_(
+                            assets.c.bought_for_type == project_type,
+                            assets.c.bought_for_key == project_key,
+                        ),
+                        and_(
+                            assets.c.used_by_type == project_type,
+                            assets.c.used_by_key == project_key,
+                        ),
+                    )
+                )
         conditions.append(or_(*project_conditions))
 
     if category:
@@ -78,7 +90,8 @@ async def filtered_assets(
     if used_by:
         used_by_type, used_by_key = _parse_type_key(used_by)
         conditions.append(assets.c.used_by_type == used_by_type)
-        conditions.append(assets.c.used_by_key == used_by_key)
+        if used_by_key is not None:
+            conditions.append(assets.c.used_by_key == used_by_key)
 
     if location_id:
         conditions.append(assets.c.location_id.in_(location_id))
@@ -101,6 +114,13 @@ async def filtered_assets(
         conditions.append(assets.c.warranty_expiry.isnot(None))
         conditions.append(assets.c.warranty_expiry <= cutoff)
 
+    if reallocated:
+        conditions.append(
+            select(events.c.id)
+            .where(events.c.part_uid == assets.c.part_uid, events.c.event_type == "reallocated")
+            .exists()
+        )
+
     if conditions:
         query = query.where(and_(*conditions))
 
@@ -122,6 +142,7 @@ async def list_assets(
     max_amount: float | None = None,
     is_consumable: bool | None = None,
     warranty_expiring: int | None = None,
+    reallocated: bool | None = None,
     conn: AsyncConnection = Depends(get_db),
 ):
     return await filtered_assets(
@@ -138,6 +159,7 @@ async def list_assets(
         max_amount=max_amount,
         is_consumable=is_consumable,
         warranty_expiring=warranty_expiring,
+        reallocated=reallocated,
     )
 
 
