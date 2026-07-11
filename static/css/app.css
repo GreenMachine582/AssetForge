@@ -1,1 +1,43 @@
 /* Bootstrap overrides and custom tokens go here. */
+
+/* ── Tabulator: Bootstrap 5.3 dark-mode adaptation ───────────────────── */
+[data-bs-theme="dark"] .tabulator {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .tabulator-header,
+[data-bs-theme="dark"] .tabulator-header .tabulator-col {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: var(--bs-secondary-bg);
+}
+[data-bs-theme="dark"] .tabulator-tableholder {
+    background-color: var(--bs-body-bg);
+}
+[data-bs-theme="dark"] .tabulator-row {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .tabulator-row.tabulator-row-even {
+    background-color: var(--bs-secondary-bg);
+}
+[data-bs-theme="dark"] .tabulator-row:hover,
+[data-bs-theme="dark"] .tabulator-row.tabulator-row-even:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+[data-bs-theme="dark"] .tabulator-cell {
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .tabulator-footer {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .tabulator-placeholder-contents {
+    color: var(--bs-secondary-color);
+}
