@@ -3,7 +3,17 @@
 {% block title %}Assets — AssetForge{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4">Assets</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Assets</h1>
+    <button class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#asset-modal"
+            hx-get="/partials/assets/form"
+            hx-target="#asset-modal-body"
+            hx-swap="innerHTML">
+        + New Asset
+    </button>
+</div>
 
 <div id="filter-bar-container">
     {% include "partials/filter-bar.html" %}

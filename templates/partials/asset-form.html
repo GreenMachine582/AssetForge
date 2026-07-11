@@ -1,0 +1,156 @@
+{% set bought_for_val = (asset.bought_for_type ~ "|||" ~ asset.bought_for_key) if asset and asset.bought_for_type else "" %}
+{% set used_by_val = (asset.used_by_type ~ "|||" ~ asset.used_by_key) if asset and asset.used_by_type else "" %}
+
+<form hx-post="{{ form_action }}"
+      hx-target="#asset-form-errors"
+      hx-swap="innerHTML">
+
+    <div id="asset-form-errors" class="mb-2"></div>
+
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="af-uid">Part UID</label>
+            {% if is_edit %}
+            <p class="form-control-plaintext fw-medium mb-0">{{ asset.part_uid }}</p>
+            <div class="form-text">UID cannot be changed after creation.</div>
+            {% else %}
+            <input type="text" id="af-uid" name="part_uid" class="form-control"
+                   placeholder="PCB2-GPU-001" required>
+            <div class="form-text">
+                Format: PCB2V2-GPU-001 &mdash; <span id="af-uid-suggestion"></span>
+            </div>
+            <script>
+            (function () {
+                function suggestUid() {
+                    var proj = document.getElementById('af-bought-for').value;
+                    var cat = document.getElementById('af-cat').value.trim();
+                    if (!proj || !cat) return;
+                    var sep = proj.indexOf('|||');
+                    var ptype = sep >= 0 ? proj.slice(0, sep) : proj;
+                    var pkey = sep >= 0 ? proj.slice(sep + 3) : '';
+                    htmx.ajax('GET',
+                        '/partials/assets/suggest-uid'
+                        + '?project_type=' + encodeURIComponent(ptype)
+                        + '&project_key=' + encodeURIComponent(pkey)
+                        + '&category=' + encodeURIComponent(cat),
+                        { target: '#af-uid-suggestion', swap: 'innerHTML' }
+                    );
+                }
+                document.getElementById('af-bought-for').addEventListener('change', suggestUid);
+                document.getElementById('af-cat').addEventListener('change', suggestUid);
+            })();
+            </script>
+            {% endif %}
+        </div>
+        <div class="col">
+            <label class="form-label" for="af-cat">Category</label>
+            <input type="text" id="af-cat" name="category" class="form-control"
+                   list="af-cat-list" autocomplete="off"
+                   value="{{ asset.category if asset else '' }}"
+                   placeholder="GPU" required>
+            <datalist id="af-cat-list">
+                {% for c in categories %}
+                <option value="{{ c }}">
+                {% endfor %}
+            </datalist>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="af-name">Name</label>
+        <input type="text" id="af-name" name="name" class="form-control"
+               value="{{ asset.name if asset else '' }}"
+               placeholder="RTX 5070 Ti" required>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="af-bought-for">Bought For</label>
+            <select id="af-bought-for" name="bought_for" class="form-select">
+                <option value="">— none —</option>
+                {% for p in all_projects %}
+                <option value="{{ p.type }}|||{{ p.key }}"
+                        {{ 'selected' if (p.type ~ '|||' ~ p.key) == bought_for_val else '' }}>
+                    {{ p.type }} · {{ p.key }}{% if p.name %} — {{ p.name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label" for="af-used-by">Used By</label>
+            <select id="af-used-by" name="used_by" class="form-select">
+                <option value="">— none —</option>
+                {% for p in all_projects %}
+                <option value="{{ p.type }}|||{{ p.key }}"
+                        {{ 'selected' if (p.type ~ '|||' ~ p.key) == used_by_val else '' }}>
+                    {{ p.type }} · {{ p.key }}{% if p.name %} — {{ p.name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="af-amount">Amount (AUD)</label>
+            <input type="number" id="af-amount" name="amount" class="form-control"
+                   step="0.01" min="0"
+                   value="{{ asset.amount if asset and asset.amount is not none else '' }}"
+                   placeholder="499.00">
+        </div>
+        <div class="col">
+            <label class="form-label" for="af-date">Purchase Date</label>
+            <input type="date" id="af-date" name="purchase_date" class="form-control"
+                   value="{{ asset.purchase_date.isoformat() if asset and asset.purchase_date else '' }}">
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col">
+            <label class="form-label" for="af-retailer">Retailer</label>
+            <input type="text" id="af-retailer" name="retailer" class="form-control"
+                   value="{{ asset.retailer if asset and asset.retailer else '' }}"
+                   placeholder="Scorptec">
+        </div>
+        <div class="col">
+            <label class="form-label" for="af-link">Purchase Link</label>
+            <input type="url" id="af-link" name="link" class="form-control"
+                   value="{{ asset.link if asset and asset.link else '' }}"
+                   placeholder="https://...">
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3 align-items-end">
+        <div class="col-auto">
+            <div class="form-check mt-2">
+                <input type="checkbox" id="af-consumable" name="is_consumable"
+                       class="form-check-input"
+                       {{ 'checked' if asset and asset.is_consumable else '' }}>
+                <label class="form-check-label" for="af-consumable">Consumable</label>
+            </div>
+        </div>
+        {% if not is_edit %}
+        <div class="col">
+            <label class="form-label" for="af-state">Initial State</label>
+            <select id="af-state" name="state" class="form-select">
+                {% for s in asset_states %}
+                <option value="{{ s }}" {{ 'selected' if s == 'planned' else '' }}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="af-notes">Notes</label>
+        <textarea id="af-notes" name="notes" class="form-control" rows="3"
+                  placeholder="Optional notes...">{{ asset.notes if asset and asset.notes else '' }}</textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            {{ 'Save Changes' if is_edit else 'Create Asset' }}
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    </div>
+</form>

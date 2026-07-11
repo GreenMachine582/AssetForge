@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from database import get_db
-from models import assets, events, projects, specs
+from models import ASSET_STATES, assets, attachments, benchmarks, events, projects, specs
 from routers.assets import filtered_assets
 from services.serialization import json_default
 from services.state_machine import TRANSITIONS, validate_transition
@@ -130,6 +130,214 @@ async def dashboard(request: Request, conn: AsyncConnection = Depends(get_db)):
 
 async def _all_projects(conn: AsyncConnection):
     return (await conn.execute(select(projects))).mappings().all()
+
+
+_SUGGESTED_CATEGORIES = [
+    "CPU", "GPU", "RAM", "SSD", "NVMe", "HDD", "PSU", "Case",
+    "Motherboard", "Cooler", "Monitor", "Keyboard", "Mouse", "Headset",
+    "UPS", "Switch", "NAS", "Server", "Peripheral", "Cable", "Other",
+]
+
+
+def _split_project(raw: str) -> tuple[str | None, str | None]:
+    if not raw:
+        return None, None
+    ptype, _, pkey = raw.partition("|||")
+    return ptype or None, pkey or None
+
+
+_CATEGORY_CODES: dict[str, str] = {
+    "CPU": "CPU", "GPU": "GPU", "RAM": "RAM",
+    "SSD": "STO", "NVMe": "STO", "HDD": "STO",
+    "PSU": "PSU", "Case": "CAS", "Motherboard": "MOB",
+    "Cooler": "COL", "Monitor": "MON", "Keyboard": "PER",
+    "Mouse": "PER", "Headset": "PER", "UPS": "UPS",
+    "Switch": "NET", "NAS": "NET", "Server": "NET",
+    "Peripheral": "PER", "Cable": "CBL", "Other": "OTH",
+}
+
+
+@router.get("/partials/assets/suggest-uid")
+async def partial_asset_suggest_uid(
+    project_type: str = "",
+    project_key: str = "",
+    category: str = "",
+    conn: AsyncConnection = Depends(get_db),
+):
+    if not project_type or not category:
+        return HTMLResponse("")
+    type_code = "".join(w[0].upper() for w in project_type.split() if w)
+    key_code = project_key.replace("-", "").replace(" ", "").upper()
+    prefix = type_code + key_code
+    cat_code = _CATEGORY_CODES.get(category, category[:3].upper())
+    pattern = f"{prefix}-{cat_code}-%"
+    count = (
+        await conn.execute(
+            select(func.count()).where(assets.c.part_uid.like(pattern))
+        )
+    ).scalar() or 0
+    suggestion = f"{prefix}-{cat_code}-{count + 1:03d}"
+    link = (
+        f'Suggested: <a href="#" class="link-secondary"'
+        f' onclick="document.getElementById(\'af-uid\').value=\'{suggestion}\';'
+        f'document.getElementById(\'af-uid-suggestion\').innerHTML=\'\';'
+        f'return false;">{suggestion}</a>'
+    )
+    return HTMLResponse(link)
+
+
+@router.get("/partials/assets/form")
+async def partial_asset_form_new(request: Request, conn: AsyncConnection = Depends(get_db)):
+    return templates.TemplateResponse(
+        request,
+        "partials/asset-form.html",
+        {
+            "form_action": "/partials/assets",
+            "is_edit": False,
+            "asset": None,
+            "all_projects": await _all_projects(conn),
+            "categories": _SUGGESTED_CATEGORIES,
+            "asset_states": list(ASSET_STATES),
+        },
+    )
+
+
+@router.get("/partials/assets/form/{uid}")
+async def partial_asset_form_edit(
+    uid: str, request: Request, conn: AsyncConnection = Depends(get_db)
+):
+    row = (
+        await conn.execute(select(assets).where(assets.c.part_uid == uid))
+    ).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return templates.TemplateResponse(
+        request,
+        "partials/asset-form.html",
+        {
+            "form_action": f"/partials/assets/{quote(uid, safe='')}",
+            "is_edit": True,
+            "asset": row,
+            "all_projects": await _all_projects(conn),
+            "categories": _SUGGESTED_CATEGORIES,
+            "asset_states": list(ASSET_STATES),
+        },
+    )
+
+
+@router.post("/partials/assets")
+async def partial_asset_create(
+    request: Request,
+    part_uid: str = Form(...),
+    name: str = Form(...),
+    category: str = Form(...),
+    bought_for: str = Form(default=""),
+    used_by: str = Form(default=""),
+    amount: str = Form(default=""),
+    purchase_date: str = Form(default=""),
+    retailer: str = Form(default=""),
+    link: str = Form(default=""),
+    is_consumable: str = Form(default=""),
+    state: str = Form(default="planned"),
+    notes: str = Form(default=""),
+    conn: AsyncConnection = Depends(get_db),
+):
+    bf_type, bf_key = _split_project(bought_for)
+    ub_type, ub_key = _split_project(used_by)
+    values = {
+        "part_uid": part_uid.strip(),
+        "name": name.strip(),
+        "category": category.strip(),
+        "bought_for_type": bf_type,
+        "bought_for_key": bf_key,
+        "used_by_type": ub_type,
+        "used_by_key": ub_key,
+        "amount": float(amount) if amount else None,
+        "purchase_date": date.fromisoformat(purchase_date) if purchase_date else None,
+        "retailer": retailer.strip() or None,
+        "link": link.strip() or None,
+        "is_consumable": is_consumable == "on",
+        "state": state or "planned",
+        "notes": notes.strip() or None,
+    }
+    try:
+        await conn.execute(insert(assets).values(**values))
+        await conn.execute(
+            insert(events).values(
+                part_uid=values["part_uid"],
+                event_type="purchased",
+                to_project_type=bf_type,
+                to_project_key=bf_key,
+            )
+        )
+        await conn.commit()
+    except IntegrityError:
+        await conn.rollback()
+        return HTMLResponse(
+            '<div class="alert alert-danger py-2 mb-0">An asset with that Part UID already exists.</div>'
+        )
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/assets"
+    return response
+
+
+@router.post("/partials/assets/{uid}")
+async def partial_asset_update(
+    uid: str,
+    request: Request,
+    name: str = Form(...),
+    category: str = Form(...),
+    bought_for: str = Form(default=""),
+    used_by: str = Form(default=""),
+    amount: str = Form(default=""),
+    purchase_date: str = Form(default=""),
+    retailer: str = Form(default=""),
+    link: str = Form(default=""),
+    is_consumable: str = Form(default=""),
+    notes: str = Form(default=""),
+    conn: AsyncConnection = Depends(get_db),
+):
+    bf_type, bf_key = _split_project(bought_for)
+    ub_type, ub_key = _split_project(used_by)
+    values = {
+        "name": name.strip(),
+        "category": category.strip(),
+        "bought_for_type": bf_type,
+        "bought_for_key": bf_key,
+        "used_by_type": ub_type,
+        "used_by_key": ub_key,
+        "amount": float(amount) if amount else None,
+        "purchase_date": date.fromisoformat(purchase_date) if purchase_date else None,
+        "retailer": retailer.strip() or None,
+        "link": link.strip() or None,
+        "is_consumable": is_consumable == "on",
+        "notes": notes.strip() or None,
+    }
+    result = await conn.execute(
+        update(assets).where(assets.c.part_uid == uid).values(**values)
+    )
+    if result.rowcount == 0:
+        return HTMLResponse('<div class="alert alert-danger py-2 mb-0">Asset not found.</div>')
+    await conn.commit()
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/assets"
+    return response
+
+
+@router.delete("/partials/assets/{uid}")
+async def partial_asset_delete(
+    uid: str,
+    conn: AsyncConnection = Depends(get_db),
+):
+    await conn.execute(delete(benchmarks).where(benchmarks.c.part_uid == uid))
+    await conn.execute(delete(attachments).where(attachments.c.part_uid == uid))
+    await conn.execute(delete(events).where(events.c.part_uid == uid))
+    await conn.execute(delete(specs).where(specs.c.part_uid == uid))
+    await conn.execute(delete(assets).where(assets.c.part_uid == uid))
+    await conn.commit()
+    response = HTMLResponse("")
+    response.headers["HX-Redirect"] = "/assets"
+    return response
 
 
 @router.get("/assets")

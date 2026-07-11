@@ -1,6 +1,23 @@
 <h5>{{ asset.name }}</h5>
 <p class="text-body-secondary mb-2">{{ asset.part_uid }} &middot; {{ asset.category }}</p>
 
+<div class="d-flex gap-2 mb-3">
+    <button class="btn btn-sm btn-outline-secondary"
+            data-bs-toggle="modal"
+            data-bs-target="#asset-modal"
+            hx-get="/partials/assets/form/{{ asset.part_uid | urlenc }}"
+            hx-target="#asset-modal-body"
+            hx-swap="innerHTML">
+        Edit
+    </button>
+    <button class="btn btn-sm btn-outline-danger"
+            hx-delete="/partials/assets/{{ asset.part_uid | urlenc }}"
+            hx-confirm="Delete {{ asset.name }}? This cannot be undone."
+            hx-swap="none">
+        Delete
+    </button>
+</div>
+
 <p class="mb-2 small">
     <span class="text-body-secondary">Bought for:</span>
     {% if asset.bought_for_type %}{{ asset.bought_for_type }}:{{ asset.bought_for_key }}{% else %}&mdash;{% endif %}
