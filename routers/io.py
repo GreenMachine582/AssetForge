@@ -17,6 +17,7 @@ from services.ai_context import (
     render_upgrade_planning,
 )
 from services.excel import build_workbook
+from services.serialization import json_default as _json_default
 
 router = APIRouter()
 
@@ -31,12 +32,6 @@ TABLES = [
     ("events", events),
     ("settings", settings),
 ]
-
-
-def _json_default(value):
-    if isinstance(value, datetime):
-        return value.isoformat()
-    return str(value)
 
 
 @router.get("/export/excel")

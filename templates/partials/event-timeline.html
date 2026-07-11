@@ -1,0 +1,15 @@
+<div id="event-timeline-{{ uid }}"{% if oob %} hx-swap-oob="true"{% endif %}>
+    {% if events %}
+    <ul class="list-group list-group-flush">
+        {% for event in events %}
+        <li class="list-group-item">
+            <strong>{{ event.event_type }}</strong>
+            <span class="text-body-secondary small">{{ event.date }}</span>
+            {% if event.notes %}<div class="small">{{ event.notes }}</div>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-body-secondary small mb-0">No events yet.</p>
+    {% endif %}
+</div>

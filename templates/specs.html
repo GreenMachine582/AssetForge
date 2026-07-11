@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Specs — AssetForge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Specs</h1>
+    <button class="btn btn-sm btn-outline-primary" id="copy-ai-context-btn">
+        Copy AI Context (Specs)
+    </button>
+</div>
+
+<div id="specs-table"></div>
+
+<script>
+(function () {
+    const rows = {{ rows_json | safe }};
+
+    function missingFormatter(cell) {
+        const value = cell.getValue();
+        if (value === null || value === undefined || value === "") {
+            cell.getElement().classList.add("table-warning");
+            return "—";
+        }
+        return value;
+    }
+
+    const table = new Tabulator("#specs-table", {
+        data: rows,
+        layout: "fitDataFill",
+        columns: [
+            { title: "Part UID", field: "part_uid", width: 130 },
+            { title: "Name", field: "name", width: 160 },
+            { title: "Socket/Interface", field: "socket_interface", editor: "input", formatter: missingFormatter },
+            { title: "Form Factor", field: "form_factor", editor: "input", formatter: missingFormatter },
+            { title: "RAM Gen", field: "ram_gen", editor: "input", formatter: missingFormatter },
+            { title: "PCIe Gen", field: "pcie_gen", editor: "input", formatter: missingFormatter },
+            { title: "Chipset", field: "chipset", editor: "input", formatter: missingFormatter },
+            { title: "TDP (W)", field: "tdp_watt", editor: "number", formatter: missingFormatter },
+            { title: "Capacity", field: "capacity", editor: "input", formatter: missingFormatter },
+            { title: "Slots Used", field: "slots_used", editor: "number", formatter: missingFormatter },
+            { title: "Slots Total", field: "slots_total", editor: "number", formatter: missingFormatter },
+            { title: "Speed", field: "speed_spec", editor: "input", formatter: missingFormatter },
+            { title: "Cooler Height (mm)", field: "cooler_height_mm", editor: "number", formatter: missingFormatter },
+            { title: "Compat Notes", field: "compat_notes", editor: "input", formatter: missingFormatter },
+        ],
+    });
+
+    table.on("cellEdited", function (cell) {
+        const field = cell.getField();
+        const uid = cell.getRow().getData().part_uid;
+        const value = cell.getValue();
+        fetch("/api/specs/" + encodeURIComponent(uid), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ [field]: value === "" ? null : value }),
+        });
+    });
+
+    document.getElementById("copy-ai-context-btn").addEventListener("click", function () {
+        copyEndpointToClipboard("/api/ai-context/specs", this);
+    });
+})();
+</script>
+{% endblock %}

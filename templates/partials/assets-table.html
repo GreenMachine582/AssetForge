@@ -1,0 +1,33 @@
+<div id="assets-table"></div>
+
+<script>
+(function () {
+    const rows = {{ rows_json | safe }};
+    const table = new Tabulator("#assets-table", {
+        data: rows,
+        layout: "fitColumns",
+        height: "600px",
+        columnDefaults: { headerFilter: false },
+        columns: [
+            { title: "Part UID", field: "part_uid", headerSort: true },
+            { title: "Name", field: "name" },
+            { title: "Category", field: "category" },
+            { title: "State", field: "state" },
+            { title: "Project", field: "project" },
+            { title: "Amount", field: "amount", formatter: "money", formatterParams: { precision: 2 } },
+            { title: "Purchased", field: "purchase_date" },
+        ],
+    });
+
+    table.on("rowClick", function (e, row) {
+        const uid = row.getData().part_uid;
+        htmx.ajax("GET", "/partials/asset-card/" + encodeURIComponent(uid), {
+            target: "#asset-offcanvas-body",
+            swap: "innerHTML",
+        }).then(function () {
+            const offcanvasEl = document.getElementById("asset-offcanvas");
+            bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+        });
+    });
+})();
+</script>

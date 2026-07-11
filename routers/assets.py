@@ -19,22 +19,22 @@ def _parse_type_key(value: str) -> tuple[str, str]:
     return project_type, project_key
 
 
-@router.get("", response_model=list[AssetOut])
-async def list_assets(
+async def filtered_assets(
+    conn: AsyncConnection,
     q: str | None = None,
-    project: list[str] = Query(default=[]),
-    category: list[str] = Query(default=[]),
-    state: list[str] = Query(default=[]),
+    project: list[str] | None = None,
+    category: list[str] | None = None,
+    state: list[str] | None = None,
     used_by: str | None = None,
-    location_id: list[int] = Query(default=[]),
+    location_id: list[int] | None = None,
     from_date: date | None = None,
     to_date: date | None = None,
     min_amount: float | None = None,
     max_amount: float | None = None,
     is_consumable: bool | None = None,
     warranty_expiring: int | None = None,
-    conn: AsyncConnection = Depends(get_db),
 ):
+    """Shared filter logic for GET /api/assets and GET /partials/assets-table."""
     query = select(assets).select_from(
         assets.outerjoin(specs, assets.c.part_uid == specs.c.part_uid)
     )
@@ -106,6 +106,39 @@ async def list_assets(
 
     rows = (await conn.execute(query)).mappings().all()
     return list(rows)
+
+
+@router.get("", response_model=list[AssetOut])
+async def list_assets(
+    q: str | None = None,
+    project: list[str] = Query(default=[]),
+    category: list[str] = Query(default=[]),
+    state: list[str] = Query(default=[]),
+    used_by: str | None = None,
+    location_id: list[int] = Query(default=[]),
+    from_date: date | None = None,
+    to_date: date | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    is_consumable: bool | None = None,
+    warranty_expiring: int | None = None,
+    conn: AsyncConnection = Depends(get_db),
+):
+    return await filtered_assets(
+        conn,
+        q=q,
+        project=project,
+        category=category,
+        state=state,
+        used_by=used_by,
+        location_id=location_id,
+        from_date=from_date,
+        to_date=to_date,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        is_consumable=is_consumable,
+        warranty_expiring=warranty_expiring,
+    )
 
 
 @router.post("", response_model=AssetOut, status_code=201)

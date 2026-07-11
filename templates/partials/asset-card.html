@@ -1,0 +1,49 @@
+<h5>{{ asset.name }}</h5>
+<p class="text-body-secondary mb-2">{{ asset.part_uid }} &middot; {{ asset.category }}</p>
+
+<p class="mb-2 small">
+    <span class="text-body-secondary">Bought for:</span>
+    {% if asset.bought_for_type %}{{ asset.bought_for_type }}:{{ asset.bought_for_key }}{% else %}&mdash;{% endif %}
+    <br>
+    <span class="text-body-secondary">Used by:</span>
+    {% if asset.used_by_type %}{{ asset.used_by_type }}:{{ asset.used_by_key }}{% else %}&mdash;{% endif %}
+</p>
+
+{% if breadcrumb %}
+<div class="mb-2 small">
+    <span class="text-body-secondary">History:</span>
+    {% for hop in breadcrumb %}<span class="badge text-bg-secondary">{{ hop }}</span>{% if not loop.last %} &rarr; {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div hx-get="/partials/state-badge/{{ asset.part_uid }}" hx-trigger="load" hx-swap="outerHTML" class="mb-3"></div>
+
+{% if asset.link %}
+<p>
+    <a href="{{ asset.link }}" target="_blank" rel="noopener">Purchase link</a>
+    &middot; {% if asset.amount %}${{ "%.2f"|format(asset.amount) }}{% else %}&mdash;{% endif %}
+</p>
+{% endif %}
+
+<hr>
+<h6>Specs</h6>
+<table class="table table-sm">
+    <tbody>
+        <tr><th>Socket / Interface</th><td>{{ asset.socket_interface or "—" }}</td></tr>
+        <tr><th>Form Factor</th><td>{{ asset.form_factor or "—" }}</td></tr>
+        <tr><th>RAM Gen</th><td>{{ asset.ram_gen or "—" }}</td></tr>
+        <tr><th>PCIe Gen</th><td>{{ asset.pcie_gen or "—" }}</td></tr>
+        <tr><th>Chipset</th><td>{{ asset.chipset or "—" }}</td></tr>
+        <tr><th>TDP (W)</th><td>{{ asset.tdp_watt or "—" }}</td></tr>
+        <tr><th>Capacity</th><td>{{ asset.capacity or "—" }}</td></tr>
+        <tr><th>Slots</th><td>{{ asset.slots_used or "—" }} / {{ asset.slots_total or "—" }}</td></tr>
+        <tr><th>Compat Notes</th><td>{{ asset.compat_notes or "—" }}</td></tr>
+    </tbody>
+</table>
+
+<hr>
+{% include "partials/asset-note.html" %}
+
+<hr>
+<h6>Event Timeline</h6>
+<div hx-get="/partials/event-timeline/{{ asset.part_uid }}" hx-trigger="load" hx-swap="outerHTML"></div>

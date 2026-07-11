@@ -1,0 +1,21 @@
+<div id="state-badge-{{ uid }}"{% if oob %} hx-swap-oob="true"{% endif %}>
+    <span class="badge text-bg-info">{{ state }}</span>
+    {% if transitions %}
+    <div class="dropdown d-inline-block">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            Transition
+        </button>
+        <ul class="dropdown-menu">
+            {% for next_state in transitions %}
+            <li>
+                <a class="dropdown-item" href="#"
+                   hx-post="/partials/asset/{{ uid }}/state"
+                   hx-vals='{"new_state": "{{ next_state }}"}'
+                   hx-target="#state-badge-{{ uid }}"
+                   hx-swap="outerHTML">{{ next_state }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>

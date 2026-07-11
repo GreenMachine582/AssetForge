@@ -1,0 +1,67 @@
+<form id="filter-form" class="row row-cols-auto g-2 align-items-end mb-2"
+      hx-get="/partials/assets-table"
+      hx-target="#assets-table-container"
+      hx-trigger="change, submit"
+      hx-push-url="true"
+      data-filters-form>
+
+    <div class="col">
+        <label class="form-label small mb-0">Search</label>
+        <input type="text" name="q" class="form-control form-control-sm"
+               value="{{ filters.q or '' }}" placeholder="name, notes, compat notes...">
+    </div>
+
+    <div class="col">
+        <label class="form-label small mb-0">Category</label>
+        <select name="category" class="form-select form-select-sm" multiple size="4">
+            {% for c in ["CPU","MOB","RAM","GPU","PSU","CAS","COL","STO","CBL","PER","MON","SBC","PWR","PST","UPS","NET","FAN","CON"] %}
+            <option value="{{ c }}" {% if c in filters.category %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col">
+        <label class="form-label small mb-0">State</label>
+        <select name="state" class="form-select form-select-sm" multiple size="4">
+            {% for s in ["wishlist","planned","ordered","delivered","installed","in_service","moved","removed","stored","retired","sold","disposed"] %}
+            <option value="{{ s }}" {% if s in filters.state %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col">
+        <label class="form-label small mb-0">Purchased from</label>
+        <input type="date" name="from_date" class="form-control form-control-sm" value="{{ filters.from_date or '' }}">
+    </div>
+    <div class="col">
+        <label class="form-label small mb-0">to</label>
+        <input type="date" name="to_date" class="form-control form-control-sm" value="{{ filters.to_date or '' }}">
+    </div>
+
+    <div class="col">
+        <label class="form-label small mb-0">Min $</label>
+        <input type="number" step="0.01" name="min_amount" class="form-control form-control-sm" value="{{ filters.min_amount or '' }}">
+    </div>
+    <div class="col">
+        <label class="form-label small mb-0">Max $</label>
+        <input type="number" step="0.01" name="max_amount" class="form-control form-control-sm" value="{{ filters.max_amount or '' }}">
+    </div>
+
+    <div class="col">
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary"
+                    hx-get="/partials/assets-table?state=planned" hx-target="#assets-table-container" hx-push-url="true">
+                Planned only
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+                    hx-get="/partials/assets-table?state=in_service" hx-target="#assets-table-container" hx-push-url="true">
+                Active
+            </button>
+        </div>
+    </div>
+
+    <div class="col">
+        <span id="filter-count-badge" class="badge text-bg-primary d-none"></span>
+        <button type="button" id="clear-filters-btn" class="btn btn-sm btn-outline-danger">Clear all</button>
+    </div>
+</form>

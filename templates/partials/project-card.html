@@ -1,0 +1,48 @@
+<div class="card h-100" id="project-card-{{ project.type | slug }}-{{ project.key | slug }}">
+    <div class="card-body">
+        <h5 class="card-title">{{ project.name }}</h5>
+        <p class="text-body-secondary small mb-2">{{ project.type }} &middot; {{ project.key }}</p>
+
+        <p class="mb-1 small">
+            Bought for: <strong>${{ "%.2f"|format(bought_for_total) }}</strong>
+            &middot; Used by: <strong>${{ "%.2f"|format(used_by_total) }}</strong>
+        </p>
+        <p class="mb-2 small">Items: {{ item_count }}</p>
+
+        {% if project.budget %}
+        {% set pct = (bought_for_total / project.budget * 100) if project.budget else 0 %}
+        <div class="progress mb-2" style="height: 6px;">
+            <div class="progress-bar {% if pct > 100 %}bg-danger{% endif %}" role="progressbar"
+                 style="width: {{ [pct, 100] | min }}%"></div>
+        </div>
+        <p class="text-body-secondary small mb-2">
+            ${{ "%.2f"|format(bought_for_total) }} / ${{ "%.2f"|format(project.budget) }} budget
+        </p>
+        {% endif %}
+
+        {% if state_counts %}
+        <div class="mb-2">
+            {% for state, count in state_counts.items() %}
+            <span class="badge text-bg-secondary">{{ state }}: {{ count }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <button class="btn btn-sm btn-outline-secondary"
+                hx-get="/partials/project-card/{{ project.type | urlenc }}/{{ project.key | urlenc }}?expanded={{ 'false' if expanded else 'true' }}"
+                hx-target="#project-card-{{ project.type | slug }}-{{ project.key | slug }}"
+                hx-swap="outerHTML">
+            {{ "Collapse" if expanded else "Expand" }}
+        </button>
+
+        {% if expanded %}
+        <ul class="list-group list-group-flush mt-2">
+            {% for asset in assets %}
+            <li class="list-group-item small">{{ asset.name }} ({{ asset.state }})</li>
+            {% else %}
+            <li class="list-group-item small text-body-secondary">No assets.</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>

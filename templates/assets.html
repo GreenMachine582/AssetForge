@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Assets — AssetForge{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Assets</h1>
+
+<div id="filter-bar-container">
+    {% include "partials/filter-bar.html" %}
+</div>
+
+<div id="assets-table-container" class="mt-3">
+    {% include "partials/assets-table.html" %}
+</div>
+{% endblock %}
