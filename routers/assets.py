@@ -37,7 +37,7 @@ async def filtered_assets(
     warranty_expiring: int | None = None,
     reallocated: bool | None = None,
 ):
-    """Shared filter logic for GET /api/assets and GET /partials/assets-table."""
+    """Shared filter logic for GET /api/assets and the /assets page (SSR)."""
     query = select(assets).select_from(
         assets.outerjoin(specs, assets.c.part_uid == specs.c.part_uid)
     )

@@ -89,8 +89,8 @@ Work in this order to stay unblocked. Each step is independently testable.
 - [x] `base.html` — Bootstrap 5 shell, nav, offcanvas mount
 - [x] `dashboard.html` — spend summary (incl. planned spend), state counts, spend-by-type chart, project quick links, recent assets
 - [x] `assets.html` — page shell, filter bar, table mount
-- [x] `partials/filter-bar.html` — all M1 filter controls (project, used by, category, state, date/amount range, text search, quick chips including HomeLab/Reallocated)
-- [x] `partials/assets-table.html` — Tabulator init, HTMX swap target, column visibility toggle
+- [x] `partials/filter-bar.html` — all M1 filter controls (project, used by, category, state, date/amount range, text search, quick chips including HomeLab/Reallocated); drives `assets.html`'s fetch + `setData()` on change
+- [x] `assets.html` — Tabulator init (once per page load), column visibility toggle, row click → offcanvas; `partials/assets-table.html` is just the static mount point
 - [x] `partials/asset-card.html` — full offcanvas detail card
 - [x] `partials/state-badge.html` — clickable badge + transition dropdown
 - [x] `partials/event-timeline.html` — chronological event log
@@ -100,7 +100,7 @@ Work in this order to stay unblocked. Each step is independently testable.
 ### 4. Services
 - [x] `services/excel.py` — export-only; `build_workbook()` produces 5-sheet xlsx from DB
 - [x] `services/ai_context.py` — Specs, Build Planning, Upgrade Planning profiles
-- [x] `static/js/filters.js` — URL param sync, chip state
+- [x] `static/js/filters.js` — filter-count badge, clear-all button (URL sync + data fetch handled inline in `assets.html`)
 - [x] `static/js/clipboard.js` — copy AI context to clipboard
 
 ### 5. Polish + Release

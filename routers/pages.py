@@ -355,25 +355,6 @@ async def assets_page(request: Request, conn: AsyncConnection = Depends(get_db))
     )
 
 
-@router.get("/partials/filter-bar")
-async def partial_filter_bar(request: Request, conn: AsyncConnection = Depends(get_db)):
-    filters = _parse_filters(request)
-    return templates.TemplateResponse(
-        request,
-        "partials/filter-bar.html",
-        {"filters": filters, "all_projects": await _all_projects(conn)},
-    )
-
-
-@router.get("/partials/assets-table")
-async def partial_assets_table(request: Request, conn: AsyncConnection = Depends(get_db)):
-    filters = _parse_filters(request)
-    rows = await filtered_assets(conn, **filters)
-    return templates.TemplateResponse(
-        request, "partials/assets-table.html", {"rows_json": _asset_rows_json(rows)}
-    )
-
-
 async def _event_timeline_rows(conn: AsyncConnection, uid: str):
     rows = (
         await conn.execute(

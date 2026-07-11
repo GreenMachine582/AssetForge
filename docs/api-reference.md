@@ -31,9 +31,7 @@ Return HTML fragments for `hx-swap` targets. Not intended for direct
 browser navigation.
 
 ```
-GET  /partials/assets-table             Filtered asset table    [M1]
 GET  /partials/asset-card/{uid}         Offcanvas card content  [M1]
-GET  /partials/filter-bar               Filter controls         [M1]
 GET  /partials/state-badge/{uid}        Rendered state badge    [M1]
 POST /partials/asset/{uid}/note         Save note → card section [M1]
 POST /partials/asset/{uid}/state        Transition → badge      [M1]

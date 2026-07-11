@@ -23,3 +23,88 @@
     {% include "partials/assets-table.html" %}
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const table = new Tabulator("#assets-table", {
+        data: {{ rows_json | safe }},
+        layout: "fitColumns",
+        height: "600px",
+        placeholder: "No assets match the current filters.",
+        columnDefaults: { headerFilter: false },
+        columns: [
+            { title: "Part UID",   field: "part_uid",      headerSort: true },
+            { title: "Name",       field: "name" },
+            { title: "Category",   field: "category" },
+            { title: "State",      field: "state" },
+            { title: "Project",    field: "project" },
+            { title: "Amount",     field: "amount",         formatter: "money", formatterParams: { precision: 2 } },
+            { title: "Purchased",  field: "purchase_date" },
+        ],
+    });
+
+    table.on("rowClick", function (e, row) {
+        const uid = row.getData().part_uid;
+        htmx.ajax("GET", "/partials/asset-card/" + encodeURIComponent(uid), {
+            target: "#asset-offcanvas-body",
+            swap: "innerHTML",
+        }).then(function () {
+            const offcanvasEl = document.getElementById("asset-offcanvas");
+            bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl).show();
+        });
+    });
+
+    table.on("tableBuilt", function () {
+        const menu = document.getElementById("column-toggle-menu");
+        table.getColumns().forEach(function (column) {
+            const li = document.createElement("li");
+            const label = document.createElement("label");
+            label.className = "dropdown-item mb-0";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "form-check-input me-2";
+            checkbox.checked = true;
+            checkbox.addEventListener("change", function () { column.toggle(); });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(column.getDefinition().title));
+            li.appendChild(label);
+            menu.appendChild(li);
+        });
+    });
+
+    function applyFilters() {
+        const form = document.getElementById("filter-form");
+        const params = new URLSearchParams();
+        for (const [key, value] of new FormData(form)) {
+            if (value) params.append(key, value);
+        }
+        const qs = params.toString();
+        history.pushState(null, "", "/assets" + (qs ? "?" + qs : ""));
+        fetch("/api/assets" + (qs ? "?" + qs : ""))
+            .then(function (r) {
+                if (!r.ok) throw new Error("filter fetch failed: " + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                data.forEach(function (row) {
+                    row.project = row.bought_for_type
+                        ? row.bought_for_type + ":" + row.bought_for_key
+                        : "";
+                });
+                table.setData(data);
+            })
+            .catch(function (err) { console.error(err); });
+    }
+
+    const form = document.getElementById("filter-form");
+    if (form) {
+        form.addEventListener("change", applyFilters);
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            applyFilters();
+        });
+    }
+})();
+</script>
+{% endblock %}

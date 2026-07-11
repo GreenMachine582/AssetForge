@@ -1,7 +1,7 @@
 // Filter-bar helper: maintains the filter-count badge and wires the
-// clear-all button. HTMX's own hx-push-url already keeps the URL in sync
-// when filters change; this only handles the reverse (URL -> form on load
-// is handled server-side by pre-filling field values from the querystring).
+// clear-all button. URL sync (pushState) and re-fetching table data on
+// filter change are handled by the inline script in assets.html; form
+// fields are pre-filled on load server-side from the querystring.
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.querySelector("[data-filters-form]");
     if (!form) return;

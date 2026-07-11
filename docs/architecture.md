@@ -106,7 +106,7 @@ AssetForge/
 │
 ├── routers/
 │   ├── pages.py                GET /* Jinja2 page routes
-│   ├── assets.py               /api/assets  CRUD + HTMX partials
+│   ├── assets.py               /api/assets  CRUD + filtering
 │   ├── projects.py             /api/projects
 │   ├── specs.py                /api/specs
 │   ├── events.py               /api/events
